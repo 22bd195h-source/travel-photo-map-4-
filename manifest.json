@@ -1,0 +1,14 @@
+{
+  "name"             : "旅先エリアマップ",
+  "short_name"       : "AreaMap",
+  "description"      : "旅した場所を写真で埋めていく日本エリアマップ",
+  "start_url"        : "/",
+  "display"          : "standalone",
+  "orientation"      : "any",
+  "background_color" : "#ffffff",
+  "theme_color"      : "#32A6B2",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

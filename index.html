@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#32A6B2">
+  <meta name="description" content="旅した場所を写真で埋めていく日本エリアマップ">
+  <title>旅先エリアマップ</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <!-- MapLibre GL JS ベース地図 -->
+  <div id="map"></div>
+
+  <!-- Canvas 2D フォトオーバーレイ -->
+  <canvas id="photo-overlay"></canvas>
+
+  <!-- 制覇カウンター -->
+  <div id="counter" class="panel">
+    <div class="counter-row">
+      <span class="counter-label">エリア</span>
+      <span id="counter-region" class="counter-value">0 / 129</span>
+      <span id="counter-region-pct" class="counter-pct">0.0%</span>
+    </div>
+  </div>
+
+  <!-- 写真追加ボタン -->
+  <button id="btn-add-photo" class="fab" title="写真を追加">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="16"/>
+      <line x1="8" y1="12" x2="16" y2="12"/>
+    </svg>
+  </button>
+
+  <!-- 旅一覧ボタン -->
+  <button id="btn-trips" class="fab fab-secondary" title="旅の記録">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+    </svg>
+  </button>
+
+  <!-- ズームスライダー -->
+  <div id="zoom-bar">
+    <span class="zoom-bar-label">広域</span>
+    <div class="zoom-slider-wrap">
+      <input type="range" id="zoom-slider" min="4" max="16" step="0.1" value="5">
+    </div>
+    <span class="zoom-bar-label">詳細</span>
+    <span id="zoom-value">5.0</span>
+  </div>
+
+  <!-- 非表示ファイル入力 -->
+  <input type="file" id="file-input" accept="image/*" style="display:none">
+
+  <!-- 写真登録ダイアログ -->
+  <div id="dialog-register" class="dialog-overlay hidden">
+    <div class="dialog panel">
+      <div class="dialog-header">
+        <h2>写真を登録</h2>
+        <button class="btn-close" id="dialog-close">&times;</button>
+      </div>
+
+      <!-- プレビュー -->
+      <div id="photo-preview-wrap">
+        <img id="photo-preview" alt="プレビュー">
+      </div>
+
+      <!-- 撮影日時 -->
+      <div class="field-row">
+        <label>撮影日時</label>
+        <input type="datetime-local" id="field-taken-at">
+      </div>
+
+      <!-- 場所検索 -->
+      <div class="field-row">
+        <label>場所（エリア名）</label>
+        <div class="search-wrap">
+          <input type="text" id="search-muni" placeholder="例: 松本・安曇野, 函館, 軽井沢" autocomplete="off">
+          <ul id="search-results" class="hidden"></ul>
+        </div>
+      </div>
+
+      <!-- 選択済み表示 -->
+      <div id="selected-polygon-display" class="hidden">
+        <span id="selected-polygon-label"></span>
+        <button id="btn-change-polygon" class="btn-link">変更</button>
+      </div>
+
+      <!-- キャプション -->
+      <div class="field-row">
+        <label>メモ（任意）</label>
+        <input type="text" id="field-caption" placeholder="ひとこと">
+      </div>
+
+      <!-- 旅を選択 -->
+      <div class="field-row">
+        <label>旅</label>
+        <select id="field-trip">
+          <option value="">旅を選択（任意）</option>
+        </select>
+        <button id="btn-new-trip" class="btn-link">+ 新しい旅</button>
+      </div>
+
+      <!-- 登録ボタン -->
+      <button id="btn-register" class="btn-primary" disabled>登録</button>
+    </div>
+  </div>
+
+  <!-- 新旅作成ダイアログ -->
+  <div id="dialog-new-trip" class="dialog-overlay hidden">
+    <div class="dialog panel dialog-sm">
+      <div class="dialog-header">
+        <h2>新しい旅</h2>
+        <button class="btn-close" id="new-trip-close">&times;</button>
+      </div>
+      <div class="field-row">
+        <label>タイトル</label>
+        <input type="text" id="trip-title" placeholder="例: 北陸旅行 2026春">
+      </div>
+      <div class="field-row">
+        <label>期間</label>
+        <div class="date-range">
+          <input type="date" id="trip-date-from">
+          <span>〜</span>
+          <input type="date" id="trip-date-to">
+        </div>
+      </div>
+      <div class="field-row">
+        <label>メモ（任意）</label>
+        <input type="text" id="trip-memo">
+      </div>
+      <button id="btn-save-trip" class="btn-primary">作成</button>
+    </div>
+  </div>
+
+  <!-- 旅一覧パネル -->
+  <div id="panel-trips" class="side-panel hidden">
+    <div class="side-panel-header">
+      <h2>旅の記録</h2>
+      <button class="btn-close" id="trips-close">&times;</button>
+    </div>
+    <div id="trips-list"></div>
+  </div>
+
+  <!-- 旅詳細パネル -->
+  <div id="panel-trip-detail" class="side-panel hidden">
+    <div class="side-panel-header">
+      <button id="btn-back-trips" class="btn-back">← 一覧</button>
+      <button class="btn-close" id="trip-detail-close">&times;</button>
+    </div>
+    <div id="trip-detail-content"></div>
+  </div>
+
+  <!-- ローディング -->
+  <div id="loading" class="loading-overlay">
+    <div class="loading-inner">
+      <div class="spinner"></div>
+      <p>地図データを読み込んでいます…</p>
+    </div>
+  </div>
+
+  <!-- スクリプト -->
+  <script src="https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/topojson-client@3/dist/topojson-client.min.js"></script>
+  <script src="/js/utils.js"></script>
+  <script src="/js/storage.js"></script>
+  <script src="/js/photo.js"></script>
+  <script src="/js/map.js"></script>
+  <script src="/js/ui.js"></script>
+  <script>
+    // Service Worker 登録
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js').catch(console.error);
+    }
+  </script>
+</body>
+</html>
