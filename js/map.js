@@ -26,9 +26,10 @@ let _canvasPxW    = 0;
 let _canvasPxH    = 0;
 
 // リージョン関連グローバル
-let _regionGroups = null;  // Map: regionKey → unit[]
-let _regionMeta   = null;  // Map: regionKey → { name, prefCode, prefName }
-let _totalRegions = 0;
+let _regionGroups  = null;  // Map: regionKey → unit[]
+let _regionMeta    = null;  // Map: regionKey → { name, prefCode, prefName }
+let _muniNameIndex = null;  // Map: municipalityCode → { muniName, regionKey, regionName, prefName }
+let _totalRegions  = 0;
 
 // =====================
 //  MapLibre 初期化
@@ -144,12 +145,13 @@ async function loadGeoData() {
   const muniUnits = geoJSON.features.flatMap(expandToUnits);
 
   // region グループ化
-  const { regionGroups, allRegionUnits, regionMeta } = buildRegionUnits(muniUnits, regionsData);
+  const { regionGroups, allRegionUnits, regionMeta, muniNameIndex } = buildRegionUnits(muniUnits, regionsData);
 
-  allUnits      = allRegionUnits;
-  _regionGroups = regionGroups;
-  _regionMeta   = regionMeta;
-  _totalRegions = regionsData.totalRegions || regionMeta.size;
+  allUnits       = allRegionUnits;
+  _regionGroups  = regionGroups;
+  _regionMeta    = regionMeta;
+  _muniNameIndex = muniNameIndex;
+  _totalRegions  = regionsData.totalRegions || regionMeta.size;
 
   // Mercator 座標を永続キャッシュ
   for (const u of allUnits) {

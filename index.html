@@ -7,7 +7,7 @@
   <meta name="description" content="旅した場所を写真で埋めていく日本エリアマップ">
   <title>旅先エリアマップ</title>
   <link rel="manifest" href="/manifest.json">
-  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.css">
   <link rel="stylesheet" href="/styles.css">
 </head>
@@ -77,9 +77,9 @@
 
       <!-- 場所検索 -->
       <div class="field-row">
-        <label>場所（エリア名）</label>
+        <label>場所（エリア名・市区町村名）</label>
         <div class="search-wrap">
-          <input type="text" id="search-muni" placeholder="例: 松本・安曇野, 函館, 軽井沢" autocomplete="off">
+          <input type="text" id="search-muni" placeholder="例: 松本市, 函館, 軽井沢, 渋谷区" autocomplete="off">
           <ul id="search-results" class="hidden"></ul>
         </div>
       </div>

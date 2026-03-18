@@ -140,7 +140,7 @@ function closeRegisterDialog() {
 }
 
 // =====================
-//  テキスト検索（エリア名）
+//  テキスト検索（エリア名＋市区町村名）
 // =====================
 
 function onSearchInput(e) {
@@ -153,18 +153,36 @@ function onSearchInput(e) {
     return;
   }
 
-  // _regionMeta からエリア名・都道府県名で部分一致検索
+  // 1) エリア名・都道府県名で部分一致
+  const seen = new Set();
   const matches = [];
+
   for (const [regionKey, meta] of _regionMeta) {
     if (meta.name.includes(q) || meta.prefName.includes(q)) {
-      matches.push({ regionKey, ...meta });
+      seen.add(regionKey);
+      matches.push({ regionKey, prefName: meta.prefName, name: meta.name, via: null });
     }
   }
 
-  renderSearchResults(matches);
+  // 2) 市区町村名で部分一致 → 対応エリアを表示
+  if (_muniNameIndex) {
+    for (const [, entry] of _muniNameIndex) {
+      if (entry.muniName.includes(q) && !seen.has(entry.regionKey)) {
+        seen.add(entry.regionKey);
+        matches.push({
+          regionKey : entry.regionKey,
+          prefName  : entry.prefName,
+          name      : entry.regionName,
+          via       : entry.muniName,
+        });
+      }
+    }
+  }
+
+  renderSearchResults(matches, q);
 }
 
-function renderSearchResults(matches) {
+function renderSearchResults(matches, query) {
   const resultsList = document.getElementById('search-results');
   resultsList.innerHTML = '';
 
@@ -173,9 +191,20 @@ function renderSearchResults(matches) {
     return;
   }
 
+  // 市区町村名でヒットしたもの（via あり）を先に表示
+  matches.sort((a, b) => {
+    if (a.via && !b.via) return -1;
+    if (!a.via && b.via) return 1;
+    return 0;
+  });
+
   for (const match of matches) {
     const li = document.createElement('li');
-    li.textContent = `${match.prefName} ${match.name}`;
+    if (match.via) {
+      li.innerHTML = `${escHtml(match.prefName)} <strong>${escHtml(match.via)}</strong> → ${escHtml(match.name)}`;
+    } else {
+      li.textContent = `${match.prefName} ${match.name}`;
+    }
 
     li.addEventListener('click', () => {
       resultsList.classList.add('hidden');

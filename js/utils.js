@@ -93,7 +93,21 @@ function buildRegionUnits(allMuniUnits, regionsData) {
     regionGroups.get(mapping.regionKey).push(unit);
   }
 
-  return { regionGroups, allRegionUnits: allMuniUnits, regionMeta };
+  // 市区町村名 → regionKey の逆引きインデックス（検索用）
+  // Map<municipalityName, { regionKey, regionName, prefName, municipalityCode }>
+  const muniNameIndex = new Map();
+  for (const unit of allMuniUnits) {
+    if (!unit.regionKey || muniNameIndex.has(unit.municipalityCode)) continue;
+    const rm = regionMeta.get(unit.regionKey);
+    muniNameIndex.set(unit.municipalityCode, {
+      muniName   : unit.municipalityName,
+      regionKey  : unit.regionKey,
+      regionName : unit.regionName,
+      prefName   : rm ? rm.prefName : '',
+    });
+  }
+
+  return { regionGroups, allRegionUnits: allMuniUnits, regionMeta, muniNameIndex };
 }
 
 // =====================
